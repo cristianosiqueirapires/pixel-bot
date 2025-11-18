@@ -1,0 +1,6 @@
+{"messageId": "m-1001", "orderId": 102, "eventType": "ORDER_SHIPPED", "occurredAt": "2025-11-10T12:10:00Z", "payload": {"carrier": "BB", "tracking": "BB123"}}
+{"messageId": "m-1002", "orderId": 103, "eventType": "ORDER_UPDATED", "occurredAt": "2025-11-10T12:11:00Z", "payload": {"field": "status", "from": "Pago", "to": "Expedido"}}
+{"messageId": "m-1003", "orderId": 104, "eventType": "ORDER_SHIPPED", "occurredAt": "2025-11-11T09:05:00Z", "payload": {"carrier": "DD", "tracking": "DD456"}}
+{"messageId": "m-1004", "orderId": 104, "eventType": "ORDER_SHIPPED", "occurredAt": "2025-11-11T09:05:00Z", "payload": {"carrier": "DD", "tracking": "DD456"}}
+{"messageId": "m-1005", "orderId": 105, "eventType": "ORDER_UPDATED", "occurredAt": "2025-11-12T17:20:00Z", "payload": {"field": "credits", "delta": 10}}
+{"messageId": "m-1006", "orderId": 105, "eventType": "ORDER_SHIPPED", "occurredAt": "2025-11-13T10:00:00Z", "payload": {"carrier": "EE", "tracking": "EE789"}}
