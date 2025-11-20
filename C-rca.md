@@ -1,11 +1,27 @@
 # C) RCA – Latência e Contenda (Relatório x UPDATE)
 
-**Cenário:** Em um sábado às 10h30, a latência do e‑commerce aumentou. Houve contenda entre:
-- Um **relatório** (SELECT com JOIN em `Pedido` + `Expedicao`), janela de 7 dias e `ORDER BY ClienteId, DataPedido DESC`;
-- Um **UPDATE** em `Pedido` que altera `Status` e `DataExpedicao` para múltiplos pedidos.
+**Cenário:** Sábado 10h30, aumento súbito de latência no e-commerce causado por contenda entre:
 
-**Escreva em 8–12 linhas:**
-- **Causa provável** (bloqueios S/X por índice ruim, scans + sort custoso, spills em tempdb, lock escalation).  
-- **Mitigação imediata** (limitar/pausar relatório, hints/janelas, leitura em réplica ou `RCSI` se disponível).  
-- **Prevenção** (índices compostos/cobertura, manutenção de estatísticas, Query Store, janelas off‑peak).  
-- **Runbook** (passos do plantão: coletar evidências com DMVs/Query Store, comunicar, mitigar, validar e encerrar).
+- Relatório pesado (SELECT com JOIN Pedido + Expedicao, janela 7 dias, ORDER BY ClienteId, DataPedido DESC);
+- UPDATE em lote alterando Status e DataExpedicao em Pedido.
+
+**Causa provável:**  
+O relatório realiza Clustered Index Scan e mantém S-locks prolongados por falta de índice cobrindo JOIN/ORDER BY. O UPDATE precisa de X-locks nas mesmas chaves, formando blocking chain. O sort do ORDER BY gera spill no tempdb, aumentando o tempo de retenção dos locks e elevando risco de lock escalation (páginas → tabela).
+
+**Mitigação imediata:**
+1. Identificar o head blocker via sp_whoisactive ou sys.dm_exec_requests.
+2. Encerrar a sessão (KILL <spid>) ou aplicar temporariamente WITH (NOLOCK) no relatório.
+3. Se o banco estivesse com RCSI, a contenda leitura × escrita não ocorreria.
+
+**Prevenção:**
+- Criar índice non-clustered cobrindo (ClienteId, DataPedido DESC) + colunas do JOIN (INCLUDE).
+- Agendar relatórios off-peak ou mover para réplica de leitura.
+- Ativar READ_COMMITTED_SNAPSHOT (RCSI) para eliminar bloqueios entre SELECT e UPDATE.
+- Monitorar via Query Store e manter estatísticas sempre atualizadas.
+
+**Runbook (plantão):**
+1. Coletar evidências: sp_whoisactive, waits LCK_M_*, plano de execução.
+2. Comunicar incidente no canal adequado.
+3. Mitigar: derrubar a sessão bloqueadora e validar throughput.
+4. Confirmar queda da latência e normalização dos waits.
+5. Registrar pós-incidente com ações preventivas (índice, RCSI, nova janela de relatório).
